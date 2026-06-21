@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>آپشن‌اسکول</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117;--sur:#161b22;--sur2:#1c2230;
+  --bor:#2a3347;--txt:#e6edf3;--mut:#7d8fa8;
+  --acc:#00c9a7;--acc2:#3b82f6;
+  --gain:#22c55e;--loss:#ef4444;--warn:#f59e0b;
+  --r:8px;--f:'Tahoma','Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--f);font-size:13px;direction:rtl}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* topbar */
+.top{display:flex;align-items:center;gap:10px;padding:9px 16px;
+  background:var(--sur);border-bottom:1px solid var(--bor);flex-shrink:0}
+.logo{font-size:17px;font-weight:700;color:var(--acc)}
+.status{font-size:11px;color:var(--mut);margin-right:auto;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--gain)}
+.dot.spin{background:var(--warn)}
+.dot.err{background:var(--loss)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.dot{animation:blink 2s infinite}
+.btn{padding:6px 14px;background:var(--acc);color:#000;border:none;border-radius:var(--r);
+  font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f)}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* tabs */
+.tabs{display:flex;gap:2px;padding:7px 14px 0;background:var(--sur);
+  border-bottom:1px solid var(--bor);overflow-x:auto;flex-shrink:0}
+.tabs::-webkit-scrollbar{height:3px}
+.tabs::-webkit-scrollbar-thumb{background:var(--bor)}
+.tab{padding:6px 13px;border:none;border-bottom:2px solid transparent;
+  background:none;color:var(--mut);cursor:pointer;font-size:12px;font-family:var(--f);
+  white-space:nowrap;transition:color .15s,border-color .15s}
+.tab:hover{color:var(--txt)}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+
+/* content */
+.cnt{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.fbar{display:flex;gap:8px;padding:8px 14px;background:var(--sur2);
+  border-bottom:1px solid var(--bor);flex-shrink:0;flex-wrap:wrap;align-items:center}
+.fbar input,.fbar select{padding:5px 9px;background:var(--bg);border:1px solid var(--bor);
+  border-radius:var(--r);color:var(--txt);font-size:12px;font-family:var(--f);outline:none}
+.fbar input:focus,.fbar select:focus{border-color:var(--acc)}
+.lbl{color:var(--mut);font-size:11px}
+
+/* stats */
+.sbar{display:flex;gap:18px;padding:7px 14px;background:var(--sur2);
+  border-bottom:1px solid var(--bor);flex-shrink:0;overflow-x:auto}
+.si{text-align:center;flex-shrink:0}
+.si-l{font-size:10px;color:var(--mut);margin-bottom:2px}
+.si-v{font-size:14px;font-weight:700}
+
+/* table */
+.tw{flex:1;overflow:auto}
+.tw::-webkit-scrollbar{width:5px;height:5px}
+.tw::-webkit-scrollbar-thumb{background:var(--bor);border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{position:sticky;top:0;z-index:10;background:var(--sur)}
+th{padding:7px 9px;text-align:right;color:var(--mut);font-weight:600;
+  border-bottom:1px solid var(--bor);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--txt)}
+.si2{font-size:9px;margin-right:2px}
+tbody tr{border-bottom:1px solid var(--bor);transition:background .1s}
+tbody tr:hover{background:var(--sur2)}
+td{padding:6px 9px;white-space:nowrap}
+.tn{font-weight:600;color:var(--acc2)}
+.tb{color:var(--mut)}
+.gain{color:var(--gain)}.loss{color:var(--loss)}.warn{color:var(--warn)}.mut{color:var(--mut)}
+.bc{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700}
+.bc-c{background:rgba(34,197,94,.13);color:var(--gain)}
+.bc-p{background:rgba(239,68,68,.13);color:var(--loss)}
+.bc-i{background:rgba(0,201,167,.12);color:var(--acc)}
+.bc-o{background:rgba(125,143,168,.1);color:var(--mut)}
+
+/* payoff */
+.payoff-wrap{padding:20px 16px;display:flex;flex-direction:column;gap:24px;
+  overflow:auto;flex:1}
+.payoff-card{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:16px}
+.payoff-title{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--acc)}
+.payoff-desc{font-size:11px;color:var(--mut);margin-bottom:12px;line-height:1.6}
+canvas{width:100%!important;border-radius:6px}
+
+/* center */
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:12px;color:var(--mut)}
+.spinner{width:30px;height:30px;border:3px solid var(--bor);border-top-color:var(--acc);
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* modal payoff */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);
+  width:min(520px,100%);padding:20px}
+.modal-close{float:left;background:none;border:none;color:var(--mut);font-size:18px;
+  cursor:pointer;line-height:1}
+
+@media(max-width:600px){
+  th,td{padding:5px 7px;font-size:11px}
+  .top{padding:7px 10px}
+}
+</style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useCallback,useRef} = React;
+const API = "http://localhost:8000";
+
+// ── helpers ──────────────────────────────────────────
+const n  = (v,d=0) => v==null||isNaN(v) ? "—" : Number(v).toLocaleString("fa-IR",{maximumFractionDigits:d});
+const pct = v => {
+  if(v==null||isNaN(v)) return <span className="mut">—</span>;
+  const c=v>0?"gain":v<0?"loss":"mut";
+  return <span className={c}>{v>0?"+":""}{n(v,2)}٪</span>;
+};
+
+function Th({col,lbl,s,onS}){
+  const a=s.col===col;
+  return <th onClick={()=>onS(col)}>{lbl}<span className="si2">{a?(s.asc?"▲":"▼"):"⇅"}</span></th>;
+}
+
+function useSort(data,def,asc0=false){
+  const [s,setS]=useState({col:def,asc:asc0});
+  const sorted=useMemo(()=>{
+    if(!data)return[];
+    return [...data].sort((a,b)=>{
+      const av=a[s.col],bv=b[s.col];
+      if(av==null)return 1; if(bv==null)return -1;
+      const c=typeof av==="string"?av.localeCompare(bv):av-bv;
+      return s.asc?c:-c;
+    });
+  },[data,s]);
+  const onS=col=>setS(p=>({col,asc:p.col===col?!p.asc:false}));
+  return{sorted,s,onS};
+}
+
+// ── Payoff mini-chart (SVG) ──────────────────────────
+function PayoffChart({data,w=340,h=160}){
+  if(!data||!data.x)return null;
+  const {x,y,spot}=data;
+  const minY=Math.min(...y), maxY=Math.max(...y);
+  const minX=Math.min(...x), maxX=Math.max(...x);
+  const pad={t:16,r:12,b:28,l:56};
+  const W=w-pad.l-pad.r, H=h-pad.t-pad.b;
+  const px=v=>(v-minX)/(maxX-minX)*W+pad.l;
+  const py=v=>H-(v-minY)/(maxY-minY||1)*H+pad.t;
+  const pts=x.map((v,i)=>`${px(v)},${py(y[i])}`).join(" ");
+  // zero line
+  const zy=py(0);
+  // spot line
+  const sx=px(spot);
+  return(
+    <svg viewBox={`0 0 ${w} ${h}`} style={{width:"100%",height:h,display:"block"}}>
+      {/* grid */}
+      <line x1={pad.l} y1={zy} x2={w-pad.r} y2={zy} stroke="#2a3347" strokeWidth="1"/>
+      {/* area */}
+      <defs>
+        <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#00c9a7" stopOpacity=".25"/>
+          <stop offset="100%" stopColor="#00c9a7" stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <polygon points={`${px(minX)},${py(0)} ${pts} ${px(maxX)},${py(0)}`}
+        fill="url(#gg)"/>
+      <polyline points={pts} fill="none" stroke="#00c9a7" strokeWidth="2"/>
+      {/* spot */}
+      <line x1={sx} y1={pad.t} x2={sx} y2={h-pad.b} stroke="#f59e0b" strokeWidth="1" strokeDasharray="4,3"/>
+      <text x={sx+4} y={pad.t+11} fill="#f59e0b" fontSize="9">قیمت فعلی</text>
+      {/* axis labels */}
+      <text x={pad.l-4} y={zy+4} fill="#7d8fa8" fontSize="9" textAnchor="end">0</text>
+      <text x={pad.l-4} y={pad.t+6} fill="#22c55e" fontSize="9" textAnchor="end">{n(maxY)}</text>
+      <text x={pad.l-4} y={h-pad.b+4} fill="#ef4444" fontSize="9" textAnchor="end">{n(minY)}</text>
+      <text x={px(minX)} y={h-pad.b+14} fill="#7d8fa8" fontSize="8" textAnchor="middle">{n(minX)}</text>
+      <text x={px(maxX)} y={h-pad.b+14} fill="#7d8fa8" fontSize="8" textAnchor="middle">{n(maxX)}</text>
+    </svg>
+  );
+}
+
+// ── Payoff Modal ─────────────────────────────────────
+function PayoffModal({row,onClose,desc}){
+  useEffect(()=>{
+    const h=e=>{if(e.key==="Escape")onClose()};
+    window.addEventListener("keydown",h);
+    return()=>window.removeEventListener("keydown",h);
+  },[]);
+  return(
+    <div className="modal-bg" onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+      <div className="modal">
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div style={{fontWeight:700,marginBottom:8,color:"var(--acc)"}}>نمودار سود/زیان (Payoff)</div>
+        <div style={{fontSize:11,color:"var(--mut)",marginBottom:14,lineHeight:1.7}}>{desc}</div>
+        <PayoffChart data={row.payoff} w={480} h={200}/>
+        <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
+          {row.max_profit!=null&&<div><div style={{fontSize:10,color:"var(--mut)"}}>حداکثر سود</div>
+            <div className="gain" style={{fontWeight:700}}>{n(row.max_profit)}</div></div>}
+          {row.max_loss!=null&&<div><div style={{fontSize:10,color:"var(--mut)"}}>حداکثر ضرر</div>
+            <div className="loss" style={{fontWeight:700}}>{n(row.max_loss)}</div></div>}
+          {row.break_even!=null&&<div><div style={{fontSize:10,color:"var(--mut)"}}>سر به سر</div>
+            <div style={{fontWeight:700}}>{n(row.break_even)}</div></div>}
+          {row.dte!=null&&<div><div style={{fontSize:10,color:"var(--mut)"}}>مانده روز</div>
+            <div style={{fontWeight:700}}>{row.dte}</div></div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Watch ─────────────────────────────────────────────
+function Watch({cs,loading}){
+  const [q,setQ]=useState(""); const [tp,setTp]=useState("all"); const [st,setSt]=useState("all");
+  const filtered=useMemo(()=>(cs||[]).filter(c=>{
+    if(q&&!c.name.includes(q)&&!c.basis_name.includes(q))return false;
+    if(tp!=="all"&&c.type!==tp)return false;
+    if(st!=="all"&&c.status!==st)return false;
+    return true;
+  }),[cs,q,tp,st]);
+  const{sorted,s,onS}=useSort(filtered,"volume");
+  const stats=useMemo(()=>{
+    if(!cs)return null;
+    return{total:cs.length,calls:cs.filter(c=>c.type==="call").length,
+      puts:cs.filter(c=>c.type==="put").length,itm:cs.filter(c=>c.status==="در سود").length};
+  },[cs]);
+  if(loading&&!cs)return<div className="center"><div className="spinner"/><span>دریافت داده...</span></div>;
+  return<>
+    {stats&&<div className="sbar">
+      <div className="si"><div className="si-l">کل</div><div className="si-v">{n(stats.total)}</div></div>
+      <div className="si"><div className="si-l">کال (ض)</div><div className="si-v gain">{n(stats.calls)}</div></div>
+      <div className="si"><div className="si-l">پوت (ط)</div><div className="si-v loss">{n(stats.puts)}</div></div>
+      <div className="si"><div className="si-l">در سود</div><div className="si-v" style={{color:"var(--acc)"}}>{n(stats.itm)}</div></div>
+      <div className="si"><div className="si-l">فیلتر شده</div><div className="si-v">{n(sorted.length)}</div></div>
+    </div>}
+    <div className="fbar">
+      <span className="lbl">جستجو:</span>
+      <input value={q} onChange={e=>setQ(e.target.value)} placeholder="نماد یا سهم پایه..." style={{width:150}}/>
+      <span className="lbl">نوع:</span>
+      <select value={tp} onChange={e=>setTp(e.target.value)}>
+        <option value="all">همه</option><option value="call">کال (ض)</option><option value="put">پوت (ط)</option>
+      </select>
+      <span className="lbl">وضعیت:</span>
+      <select value={st} onChange={e=>setSt(e.target.value)}>
+        <option value="all">همه</option><option value="در سود">در سود</option><option value="در ضرر">در ضرر</option>
+      </select>
+    </div>
+    <div className="tw"><table><thead><tr>
+      <Th col="name" lbl="نماد" s={s} onS={onS}/>
+      <Th col="basis_name" lbl="سهم پایه" s={s} onS={onS}/>
+      <th>نوع</th>
+      <Th col="strike" lbl="اعمال" s={s} onS={onS}/>
+      <Th col="spot" lbl="قیمت سهم" s={s} onS={onS}/>
+      <Th col="price" lbl="قیمت آپشن" s={s} onS={onS}/>
+      <Th col="bid" lbl="تقاضا" s={s} onS={onS}/>
+      <Th col="ask" lbl="عرضه" s={s} onS={onS}/>
+      <Th col="iv" lbl="ارزش ذاتی" s={s} onS={onS}/>
+      <Th col="tv" lbl="ارزش زمانی" s={s} onS={onS}/>
+      <Th col="break_even" lbl="سر به سر" s={s} onS={onS}/>
+      <Th col="dte" lbl="روز مانده" s={s} onS={onS}/>
+      <th>وضعیت</th>
+      <Th col="leverage" lbl="اهرم" s={s} onS={onS}/>
+      <Th col="delta" lbl="دلتا" s={s} onS={onS}/>
+      <Th col="theta" lbl="تتا" s={s} onS={onS}/>
+      <Th col="oi" lbl="موقعیت باز" s={s} onS={onS}/>
+      <Th col="volume" lbl="حجم" s={s} onS={onS}/>
+      <th>سررسید</th>
+    </tr></thead><tbody>
+      {sorted.map((c,i)=><tr key={i}>
+        <td className="tn">{c.name}</td>
+        <td className="tb">{c.basis_name}</td>
+        <td><span className={c.type==="call"?"bc bc-c":"bc bc-p"}>{c.type==="call"?"ض":"ط"}</span></td>
+        <td>{n(c.strike)}</td><td>{n(c.spot)}</td><td>{n(c.price)}</td>
+        <td className="gain">{n(c.bid)}</td><td className="loss">{n(c.ask)}</td>
+        <td>{n(c.iv)}</td><td>{n(c.tv)}</td><td>{n(c.break_even)}</td>
+        <td className={c.dte<=5?"warn":""}>{c.dte}</td>
+        <td><span className={c.status==="در سود"?"bc bc-i":"bc bc-o"}>{c.status}</span></td>
+        <td>{n(c.leverage,1)}</td>
+        <td className={c.delta>=0.5?"gain":"mut"}>{n(c.delta,2)}</td>
+        <td className="loss">{n(c.theta,2)}</td>
+        <td>{n(c.oi)}</td><td>{n(c.volume)}</td>
+        <td className="mut">{c.expiry}</td>
+      </tr>)}
+    </tbody></table>
+    {sorted.length===0&&<div className="center" style={{height:160}}><span>نتیجه‌ای نیست</span></div>}
+    </div>
+  </>;
+}
+
+// ── Generic Strategy Table ────────────────────────────
+function StratTable({data,loading,cols,defSort,desc}){
+  const [modal,setModal]=useState(null);
+  const{sorted,s,onS}=useSort(data||[],defSort);
+  if(loading&&!data?.length)return<div className="center"><div className="spinner"/></div>;
+  const allCols=[...cols,{key:"__pf",lbl:"نمودار"}];
+  return<>
+    {modal&&<PayoffModal row={modal} onClose={()=>setModal(null)} desc={desc}/>}
+    <div className="tw"><table><thead><tr>
+      {allCols.map(c=>c.key==="__pf"
+        ?<th key="__pf">📈</th>
+        :<Th key={c.key} col={c.key} lbl={c.lbl} s={s} onS={onS}/>
+      )}
+    </tr></thead><tbody>
+      {sorted.map((row,i)=><tr key={i}>
+        {cols.map(c=><td key={c.key} className={c.cls}>
+          {c.r?c.r(row[c.key],row):n(row[c.key],c.d||0)}
+        </td>)}
+        <td>
+          {row.payoff
+            ?<button onClick={()=>setModal(row)}
+               style={{background:"none",border:"1px solid var(--bor)",color:"var(--acc)",
+                 padding:"3px 8px",borderRadius:"4px",cursor:"pointer",fontSize:11}}>
+               مشاهده
+             </button>
+            :<span className="mut">—</span>}
+        </td>
+      </tr>)}
+    </tbody></table>
+    {sorted.length===0&&<div className="center" style={{height:160}}><span>داده‌ای نیست</span></div>}
+    </div>
+  </>;
+}
+
+// ── Column configs ────────────────────────────────────
+const CC_COLS=[
+  {key:"name",lbl:"نماد کال",cls:"tn"},
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"strike",lbl:"قیمت اعمال"},{key:"dte",lbl:"روز مانده"},
+  {key:"bid_vol",lbl:"حجم تقاضا"},{key:"premium",lbl:"پرمیوم تقاضا"},
+  {key:"spot",lbl:"قیمت سهم"},{key:"break_even",lbl:"سر به سر"},
+  {key:"max_profit_pct",lbl:"سود ۳۰ر%",r:v=>pct(v)},
+  {key:"delta",lbl:"دلتا",d:2},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const MP_COLS=[
+  {key:"name",lbl:"نماد پوت",cls:"tn"},{key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"strike",lbl:"اعمال"},{key:"dte",lbl:"روز"},
+  {key:"premium",lbl:"پرمیوم"},{key:"spot",lbl:"قیمت سهم"},
+  {key:"break_even",lbl:"سر به سر"},
+  {key:"max_loss_pct",lbl:"حداکثر ضرر%",r:v=>pct(v)},
+  {key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const CO_COLS=[
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"put_name",lbl:"پوت",cls:"tn"},{key:"call_name",lbl:"کال",cls:"tn"},
+  {key:"k_put",lbl:"اعمال پوت"},{key:"k_call",lbl:"اعمال کال"},
+  {key:"spot",lbl:"قیمت سهم"},{key:"net_premium",lbl:"پرمیوم خالص",r:v=><span className={v>=0?"gain":"loss"}>{n(v)}</span>},
+  {key:"break_even",lbl:"سر به سر"},
+  {key:"max_profit_pct",lbl:"سود ۳۰ر%",r:v=>pct(v)},
+  {key:"max_loss_pct",lbl:"حداکثر ضرر%",r:v=>pct(v)},
+  {key:"dte",lbl:"روز"},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const BC_COLS=[
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"buy_name",lbl:"خرید کال",cls:"tn"},{key:"sell_name",lbl:"فروش کال",cls:"tn"},
+  {key:"k_buy",lbl:"اعمال خرید"},{key:"k_sell",lbl:"اعمال فروش"},
+  {key:"spot",lbl:"قیمت سهم"},{key:"net_cost",lbl:"هزینه خالص"},
+  {key:"break_even",lbl:"سر به سر"},
+  {key:"max_profit",lbl:"حداکثر سود",r:v=><span className="gain">{n(v)}</span>},
+  {key:"max_loss",lbl:"حداکثر ضرر",r:v=><span className="loss">{n(v)}</span>},
+  {key:"max_profit_pct",lbl:"سود ۳۰ر%",r:v=>pct(v)},
+  {key:"dte",lbl:"روز"},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const PS_COLS=[
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"buy_name",lbl:"خرید پوت",cls:"tn"},{key:"sell_name",lbl:"فروش پوت",cls:"tn"},
+  {key:"k_buy",lbl:"اعمال خرید"},{key:"k_sell",lbl:"اعمال فروش"},
+  {key:"spot",lbl:"قیمت سهم"},{key:"net_cost",lbl:"هزینه خالص"},
+  {key:"break_even",lbl:"سر به سر"},
+  {key:"max_profit",lbl:"حداکثر سود",r:v=><span className="gain">{n(v)}</span>},
+  {key:"max_loss",lbl:"حداکثر ضرر",r:v=><span className="loss">{n(v)}</span>},
+  {key:"max_profit_pct",lbl:"سود ۳۰ر%",r:v=>pct(v)},
+  {key:"dte",lbl:"روز"},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const ST_COLS=[
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"call_name",lbl:"نماد کال",cls:"tn"},{key:"put_name",lbl:"نماد پوت",cls:"tn"},
+  {key:"strike",lbl:"اعمال"},{key:"spot",lbl:"قیمت سهم"},
+  {key:"total_cost",lbl:"هزینه کل"},
+  {key:"be_up",lbl:"سر به سر بالا"},{key:"be_down",lbl:"سر به سر پایین"},
+  {key:"move_needed_pct",lbl:"نوسان لازم%",r:v=><span className="warn">{n(v,1)}٪</span>},
+  {key:"max_loss",lbl:"حداکثر ضرر",r:v=><span className="loss">{n(v)}</span>},
+  {key:"dte",lbl:"روز"},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const SG_COLS=[
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"call_name",lbl:"نماد کال",cls:"tn"},{key:"put_name",lbl:"نماد پوت",cls:"tn"},
+  {key:"k_call",lbl:"اعمال کال"},{key:"k_put",lbl:"اعمال پوت"},
+  {key:"spot",lbl:"قیمت سهم"},{key:"total_cost",lbl:"هزینه کل"},
+  {key:"be_up",lbl:"سر به سر بالا"},{key:"be_down",lbl:"سر به سر پایین"},
+  {key:"move_needed_pct",lbl:"نوسان لازم%",r:v=><span className="warn">{n(v,1)}٪</span>},
+  {key:"dte",lbl:"روز"},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const CV_COLS=[
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"put_name",lbl:"نماد پوت",cls:"tn"},{key:"call_name",lbl:"نماد کال",cls:"tn"},
+  {key:"strike",lbl:"اعمال"},{key:"spot",lbl:"قیمت سهم"},
+  {key:"call_bid",lbl:"تقاضای کال"},{key:"put_ask",lbl:"عرضه پوت"},
+  {key:"net_premium",lbl:"پرمیوم خالص",r:v=><span className={v>=0?"gain":"loss"}>{n(v)}</span>},
+  {key:"theoretical_pnl",lbl:"سود نظری",r:v=><span className={v>=0?"gain":"loss"}>{n(v)}</span>},
+  {key:"roi_30",lbl:"بازده ۳۰ر%",r:v=>pct(v)},
+  {key:"dte",lbl:"روز"},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+const BX_COLS=[
+  {key:"basis_name",lbl:"سهم پایه",cls:"tb"},
+  {key:"cl_name",lbl:"خرید کال",cls:"tn"},{key:"ch_name",lbl:"فروش کال",cls:"tn"},
+  {key:"ph_name",lbl:"خرید پوت",cls:"tn"},{key:"pl_name",lbl:"فروش پوت",cls:"tn"},
+  {key:"k_low",lbl:"اعمال پایین"},{key:"k_high",lbl:"اعمال بالا"},
+  {key:"spot",lbl:"قیمت سهم"},{key:"cost",lbl:"هزینه کل"},
+  {key:"box_value",lbl:"ارزش باکس"},
+  {key:"max_profit",lbl:"سود خالص",r:v=><span className={v>=0?"gain":"loss"}>{n(v)}</span>},
+  {key:"roi_30",lbl:"بازده ۳۰ر%",r:v=>pct(v)},
+  {key:"dte",lbl:"روز"},{key:"expiry",lbl:"سررسید",cls:"mut"},
+];
+
+// ── TABS config ───────────────────────────────────────
+const TABS=[
+  {id:"watch",   lbl:"📋 دیده‌بان"},
+  {id:"cc",      lbl:"📈 کاورد کال"},
+  {id:"mp",      lbl:"🛡️ ماریدپوت"},
+  {id:"co",      lbl:"🔒 کالر"},
+  {id:"bc",      lbl:"🐂 کال اسپرد"},
+  {id:"ps",      lbl:"🐻 پوت اسپرد"},
+  {id:"straddle",lbl:"⚡ استرادل"},
+  {id:"strangle",lbl:"🐉 استرانگل"},
+  {id:"conv",    lbl:"🔄 کانورژن"},
+  {id:"box",     lbl:"📦 باکس"},
+];
+
+const DESCS={
+  cc:"Covered Call: خرید سهم پایه + فروش آپشن کال. سود محدود (پرمیوم) اما در بازار رنج یا کمی صعودی مناسبه.",
+  mp:"Married Put: خرید سهم پایه + خرید آپشن پوت. مثل بیمه در برابر افت قیمت سهم.",
+  co:"Collar: خرید سهم + خرید پوت + فروش کال. سود و ضرر هر دو محدود می‌شن.",
+  bc:"Bull Call Spread: خرید کال اعمال پایین + فروش کال اعمال بالا. مناسب صعود محدود با هزینه کمتر.",
+  ps:"Put Spread: خرید پوت اعمال بالا + فروش پوت اعمال پایین. مناسب نزول محدود.",
+  straddle:"Long Straddle: خرید کال + پوت با همان اعمال. سود از نوسان شدید در هر جهت.",
+  strangle:"Long Strangle: خرید کال OTM + پوت OTM. هزینه کمتر از استرادل، نوسان بیشتری لازمه.",
+  conv:"Conversion: خرید سهم + خرید پوت + فروش کال (همان اعمال). آربیتراژ — سود باید نزدیک صفر باشه، عدد بالا یعنی فرصت.",
+  box:"Long Box: Bull Call Spread + Bear Put Spread. آربیتراژ بدون ریسک — سود = ارزش باکس - هزینه.",
+};
+
+// ── APP ───────────────────────────────────────────────
+function App(){
+  const [tab,setTab]=useState("watch");
+  const [all,setAll]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState(null);
+  const [ts,setTs]=useState(null);
+
+  const load=useCallback(async()=>{
+    setLoading(true); setErr(null);
+    try{
+      const r=await fetch(`${API}/api/all`);
+      if(!r.ok)throw new Error(r.statusText);
+      const j=await r.json();
+      setAll(j.data); setTs(new Date());
+    }catch(e){
+      setErr("خطا در اتصال — مطمئن شو start.bat اجرا شده");
+    }finally{setLoading(false);}
+  },[]);
+
+  useEffect(()=>{load();},[load]);
+  useEffect(()=>{const t=setInterval(load,120000);return()=>clearInterval(t);},[load]);
+
+  const st=err?"err":loading?"spin":"dot";
+  const stTxt=err?err:loading?"در حال بارگذاری...":ts?`آخرین آپدیت: ${ts.toLocaleTimeString("fa-IR")}`:"";
+  const d=all||{};
+
+  return<div className="app">
+    <div className="top">
+      <div className="logo">آپشن‌اسکول 📊</div>
+      <div className="status">
+        <div className={"dot "+st}/>
+        <span>{stTxt}</span>
+      </div>
+      <button className="btn" onClick={load} disabled={loading}>{loading?"⏳":"🔄"} بروزرسانی</button>
+    </div>
+    <div className="tabs">
+      {TABS.map(t=><button key={t.id} className={"tab"+(tab===t.id?" on":"")} onClick={()=>setTab(t.id)}>{t.lbl}</button>)}
+    </div>
+    <div className="cnt">
+      {tab==="watch"    &&<Watch cs={d.contracts}     loading={loading}/>}
+      {tab==="cc"       &&<StratTable data={d.covered_call} loading={loading} cols={CC_COLS} defSort="max_profit_pct" desc={DESCS.cc}/>}
+      {tab==="mp"       &&<StratTable data={d.married_put}  loading={loading} cols={MP_COLS} defSort="max_loss_pct"   desc={DESCS.mp}/>}
+      {tab==="co"       &&<StratTable data={d.collar}       loading={loading} cols={CO_COLS} defSort="max_profit_pct" desc={DESCS.co}/>}
+      {tab==="bc"       &&<StratTable data={d.bull_call}    loading={loading} cols={BC_COLS} defSort="max_profit_pct" desc={DESCS.bc}/>}
+      {tab==="ps"       &&<StratTable data={d.put_spread}   loading={loading} cols={PS_COLS} defSort="max_profit_pct" desc={DESCS.ps}/>}
+      {tab==="straddle" &&<StratTable data={d.straddle}     loading={loading} cols={ST_COLS} defSort="move_needed_pct" desc={DESCS.straddle}/>}
+      {tab==="strangle" &&<StratTable data={d.strangle}     loading={loading} cols={SG_COLS} defSort="move_needed_pct" desc={DESCS.strangle}/>}
+      {tab==="conv"     &&<StratTable data={d.conversion}   loading={loading} cols={CV_COLS} defSort="roi_30"         desc={DESCS.conv}/>}
+      {tab==="box"      &&<StratTable data={d.box}          loading={loading} cols={BX_COLS} defSort="roi_30"         desc={DESCS.box}/>}
+    </div>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
